@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kompyuter Holatini Monitoring Qilish & Dars Simulyatori</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Asosiy Konteyner -->
+    <div class="app-container">
+        
+        <!-- Yuqori Boshqaruv Paneli (Header) -->
+        <header class="top-nav">
+            <div class="logo-area">
+                <div class="logo-icon">🖥️</div>
+                <div class="logo-text">
+                    <h1>Tizim Monitoringi <span class="badge-v2">v2.5</span></h1>
+                    <p class="subtitle">CPU, RAM, Disk va Tizim ko'rsatkichlari simulyatori</p>
+                </div>
+            </div>
+
+            <!-- Rejim Tanlagich: Haqiqiy vs Simulyator -->
+            <div class="mode-selector">
+                <button id="btnModeLive" class="mode-btn active" title="Kompyuteringizning ayni damdagi haqiqiy ko'rsatkichlari">
+                    <span class="dot live-dot"></span> 🔴 Haqiqiy Tizim
+                </button>
+                <button id="btnModeSim" class="mode-btn" title="Darsda turli xil kritik vaziyatlarni o'quvchilarga ko'rsatish">
+                    <span class="icon">🎮</span> Dars Simulyatori
+                </button>
+            </div>
+
+            <!-- Holat va Ovozli Ogohlantirish -->
+            <div class="header-actions">
+                <div class="os-badge" id="currentOsBadge">
+                    <span class="os-icon">🪟</span> <span id="osBadgeText">Windows</span>
+                </div>
+                <button id="btnSoundToggle" class="icon-btn" title="Xavfli holatda audio ogohlantirish (Siren/Beep)">
+                    🔊 <span id="soundStatusText">Ovoz yoqiq</span>
+                </button>
+                <div class="clock-display" id="clockDisplay">00:00:00</div>
+            </div>
+        </header>
+
+        <!-- Ogohlantirish Banneri (Critical / Warning banner) -->
+        <div id="alertBanner" class="alert-banner hidden">
+            <span class="alert-icon">⚠️</span>
+            <span id="alertMessage" class="alert-text">Diqqat: Tizim me'yorida ishlamoqda</span>
+        </div>
+
+        <!-- Bo'limlar Navigatsiyasi (Tabs) -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab-dashboard">
+                <span class="tab-icon">📊</span> Asosiy Panel (Dashboard)
+            </button>
+            <button class="tab-btn" data-tab="tab-simulator">
+                <span class="tab-icon">🎮</span> Dars Simulyatori & Ssenariylar
+            </button>
+            <button class="tab-btn" data-tab="tab-os-diff">
+                <span class="tab-icon">🔍</span> OS Farqlari (Windows vs Linux)
+            </button>
+            <button class="tab-btn" data-tab="tab-quiz">
+                <span class="tab-icon">🎓</span> Dars Viktorinasi (Test)
+            </button>
+            <button class="tab-btn" data-tab="tab-theory">
+                <span class="tab-icon">📖</span> O'qituvchi Konspekti
+            </button>
+        </nav>
+
+        <!-- ========================================== -->
+        <!-- TAB 1: ASOSIY MONITORING PANELI            -->
+        <!-- ========================================== -->
+        <main id="tab-dashboard" class="tab-content active">
+            <!-- Asosiy 4 ta Karta (CPU, RAM, DISK, UPTIME) -->
+            <div class="metrics-grid">
+                
+                <!-- CPU KARTASI -->
+                <div class="metric-card" id="cardCpu">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-icon">⚡</span>
+                            <div>
+                                <h3>CPU (Protsessor)</h3>
+                                <span class="card-sub" id="cpuSub">Umumiy yuklanish</span>
+                            </div>
+                        </div>
+                        <span class="metric-value-huge" id="cpuPercentVal">0%</span>
+                    </div>
+
+                    <!-- Doiraviy / Progress Bar ko'rinishi -->
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar" id="cpuProgressBar" style="width: 0%;"></div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">Chastota:</span>
+                            <span class="stat-value" id="cpuFreqVal">-- MHz</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Yadrolar:</span>
+                            <span class="stat-value" id="cpuCoresVal">-- / --</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Harorat:</span>
+                            <span class="stat-value" id="cpuTempVal">45°C</span>
+                        </div>
+                    </div>
+
+                    <!-- Har bir yadro (Per Core) -->
+                    <div class="cores-preview-wrap">
+                        <div class="section-label">Yadrolar yuklanishi:</div>
+                        <div class="cores-grid" id="cpuCoresGrid">
+                            <!-- JS orqali to'ldiriladi -->
+                        </div>
+                    </div>
+
+                    <!-- Linux Load Average (Agar mavjud bo'lsa) -->
+                    <div class="load-avg-badge" id="loadAvgContainer">
+                        <span class="tag">Load Avg (1m, 5m, 15m):</span>
+                        <span id="loadAvgVal">0.45, 0.52, 0.60</span>
+                    </div>
+                </div>
+
+                <!-- RAM (TEZKOR XOTIRA) KARTASI -->
+                <div class="metric-card" id="cardRam">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-icon">🧠</span>
+                            <div>
+                                <h3>RAM (Tezkor Xotira)</h3>
+                                <span class="card-sub" id="ramSub">Jismoniy xotira</span>
+                            </div>
+                        </div>
+                        <span class="metric-value-huge" id="ramPercentVal">0%</span>
+                    </div>
+
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar ram-bar" id="ramProgressBar" style="width: 0%;"></div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">Ishlatilmoqda:</span>
+                            <span class="stat-value" id="ramUsedVal">0 GB</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Bo'sh xotira:</span>
+                            <span class="stat-value" id="ramFreeVal">0 GB</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Jami RAM:</span>
+                            <span class="stat-value" id="ramTotalVal">0 GB</span>
+                        </div>
+                    </div>
+
+                    <!-- Virtual Xotira (Swap / Pagefile) -->
+                    <div class="swap-section">
+                        <div class="swap-header">
+                            <span class="swap-title" id="swapTitle">Swap / Virtual Xotira:</span>
+                            <span class="swap-value" id="swapPercentVal">0%</span>
+                        </div>
+                        <div class="progress-bar-wrap mini">
+                            <div class="progress-bar swap-bar" id="swapProgressBar" style="width: 0%;"></div>
+                        </div>
+                        <div class="swap-sub-info">
+                            <span id="swapUsedTotal">0 GB / 0 GB</span>
+                            <span class="os-hint" id="swapHint">Windows: Pagefile.sys</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DISK XOTIRA KARTASI -->
+                <div class="metric-card" id="cardDisk">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-icon">💾</span>
+                            <div>
+                                <h3>Disk Xotirasi</h3>
+                                <span class="card-sub">Bo'limlar va bandlik</span>
+                            </div>
+                        </div>
+                        <span class="metric-value-huge" id="primaryDiskPercentVal">0%</span>
+                    </div>
+
+                    <!-- Disk Bo'limlari Ro'yxati -->
+                    <div class="partitions-list" id="diskPartitionsList">
+                        <!-- JS orqali to'ldiriladi -->
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">O'qish tezligi:</span>
+                            <span class="stat-value" id="diskReadSpeed">12.5 MB/s</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Yozish tezligi:</span>
+                            <span class="stat-value" id="diskWriteSpeed">5.8 MB/s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIZIM VA TARMOQ KARTASI -->
+                <div class="metric-card" id="cardSystem">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-icon">🌐</span>
+                            <div>
+                                <h3>Tizim & Tarmoq</h3>
+                                <span class="card-sub">OS ma'lumotlari</span>
+                            </div>
+                        </div>
+                        <span class="uptime-badge" id="uptimeVal">00:00</span>
+                    </div>
+
+                    <div class="system-details-list">
+                        <div class="sys-item">
+                            <span class="sys-k">Operatsion Tizim:</span>
+                            <span class="sys-v" id="sysOsName">Windows 11 (x64)</span>
+                        </div>
+                        <div class="sys-item">
+                            <span class="sys-k">Kompyuter nomi:</span>
+                            <span class="sys-v" id="sysHostName">DESKTOP-PC</span>
+                        </div>
+                        <div class="sys-item">
+                            <span class="sys-k">Faol jarayonlar:</span>
+                            <span class="sys-v" id="sysProcCount">0 ta</span>
+                        </div>
+                        <div class="sys-item">
+                            <span class="sys-k">Tarmoq Qabul (RX):</span>
+                            <span class="sys-v text-cyan" id="netRxVal">0 MB</span>
+                        </div>
+                        <div class="sys-item">
+                            <span class="sys-k">Tarmoq Uzatish (TX):</span>
+                            <span class="sys-v text-purple" id="netTxVal">0 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Pastki Qism: Real vaqt Grafigi va Top Jarayonlar -->
+            <div class="charts-and-procs-grid">
+                
+                <!-- Jonli Grafik (Canvas) -->
+                <div class="chart-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span class="panel-icon">📈</span>
+                            <h4>Real Vaqt Yuklanish Tarixi (Oxirgi 60 soniya)</h4>
+                        </div>
+                        <div class="chart-legends">
+                            <span class="legend-item"><span class="legend-color cpu-color"></span> CPU %</span>
+                            <span class="legend-item"><span class="legend-color ram-color"></span> RAM %</span>
+                        </div>
+                    </div>
+                    <div class="canvas-wrap">
+                        <canvas id="liveHistoryCanvas" width="700" height="220"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Jarayonlar Jadvali -->
+                <div class="procs-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span class="panel-icon">⚙️</span>
+                            <h4>Top Resurs Yeyotgan Jarayonlar</h4>
+                        </div>
+                        <span class="badge-mini">Task Manager</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="procs-table">
+                            <thead>
+                                <tr>
+                                    <th>PID</th>
+                                    <th>Jarayon nomi</th>
+                                    <th>CPU %</th>
+                                    <th>RAM %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="procsTableBody">
+                                <!-- JS to'ldiradi -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: DARS SIMULYATORI VA SSENARIYLAR     -->
+        <!-- ========================================== -->
+        <main id="tab-simulator" class="tab-content">
+            <div class="sim-container">
+                
+                <!-- Simulyator Boshqaruv Qismi -->
+                <div class="sim-sidebar">
+                    <div class="sim-box">
+                        <h3 class="sim-title">🎯 1-Klik Dars Ssenariylari</h3>
+                        <p class="sim-desc">O'quvchilarga me'yordan tashqari kritik holatlarni ko'rsatish uchun bosing:</p>
+                        
+                        <div class="preset-buttons">
+                            <button class="preset-btn active" data-scenario="idle">
+                                <span class="p-icon">🟢</span>
+                                <div class="p-info">
+                                    <strong>1. Oddiy Rejim (Idle)</strong>
+                                    <small>CPU ~8%, RAM ~35%, Fan sokin</small>
+                                </div>
+                            </button>
+
+                            <button class="preset-btn danger" data-scenario="cpu-stress">
+                                <span class="p-icon">🔥</span>
+                                <div class="p-info">
+                                    <strong>2. Cheksiz Sikl / Render (CPU 100%)</strong>
+                                    <small>Barcha yadrolar to'liq, trottling</small>
+                                </div>
+                            </button>
+
+                            <button class="preset-btn warning" data-scenario="mem-leak">
+                                <span class="p-icon">⚠️</span>
+                                <div class="p-info">
+                                    <strong>3. Xotira Oqishi (RAM 98% + Swap)</strong>
+                                    <small>Thrashing, OOM xavfi, tormozlanish</small>
+                                </div>
+                            </button>
+
+                            <button class="preset-btn danger" data-scenario="disk-full">
+                                <span class="p-icon">💾</span>
+                                <div class="p-info">
+                                    <strong>4. Disk To'lishi (Disk 99% Qizil)</strong>
+                                    <small>Log toshishi, OS muzlashi</small>
+                                </div>
+                            </button>
+
+                            <button class="preset-btn info" data-scenario="single-thread">
+                                <span class="p-icon">⚡</span>
+                                <div class="p-info">
+                                    <strong>5. Bir Yadro vs Ko'p Yadro</strong>
+                                    <small>1-yadro 100%, qolganlari 0%</small>
+                                </div>
+                            </button>
+
+                            <button class="preset-btn danger" data-scenario="ddos">
+                                <span class="p-icon">🌐</span>
+                                <div class="p-info">
+                                    <strong>6. Tarmoq Hujumi (DDoS / Flood)</strong>
+                                    <small>1 Gbps tarmoq tiqilishi</small>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Simulyatorda Operatsion Tizimni Almashtirish -->
+                    <div class="sim-box">
+                        <h3 class="sim-title">🔄 Operatsion Tizim Ko'rinishi</h3>
+                        <div class="os-switcher-grid">
+                            <button class="os-btn active" data-os="windows">
+                                <span>🪟</span> Windows 11
+                            </button>
+                            <button class="os-btn" data-os="linux">
+                                <span>🐧</span> Ubuntu Linux
+                            </button>
+                            <button class="os-btn" data-os="macos">
+                                <span>🍎</span> macOS Sonoma
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulyator Qo'lda Sozlash va Natija Tahlili -->
+                <div class="sim-main">
+                    
+                    <div class="sim-box">
+                        <h3 class="sim-title">🎛️ O'qituvchi Boshqaruvi: Jonli Slayderlar</h3>
+                        <p class="sim-desc">Ko'rsatkichlarni qo'lda o'zgartirib, tizim qanday reaksiyaga kirishishini ko'rsating:</p>
+
+                        <div class="sliders-grid">
+                            <div class="slider-group">
+                                <div class="slider-head">
+                                    <span>⚡ CPU Yuklanishi:</span>
+                                    <span class="slider-val text-cyan" id="sliderCpuVal">8%</span>
+                                </div>
+                                <input type="range" id="sliderCpu" min="1" max="100" value="8" class="custom-slider">
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-head">
+                                    <span>🧠 RAM Yuklanishi:</span>
+                                    <span class="slider-val text-green" id="sliderRamVal">35%</span>
+                                </div>
+                                <input type="range" id="sliderRam" min="5" max="100" value="35" class="custom-slider">
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-head">
+                                    <span>💾 Disk Bandligi:</span>
+                                    <span class="slider-val text-yellow" id="sliderDiskVal">45%</span>
+                                </div>
+                                <input type="range" id="sliderDisk" min="10" max="100" value="45" class="custom-slider">
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-head">
+                                    <span>🌡️ Protsessor Harorati:</span>
+                                    <span class="slider-val text-orange" id="sliderTempVal">45°C</span>
+                                </div>
+                                <input type="range" id="sliderTemp" min="30" max="105" value="45" class="custom-slider">
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-head">
+                                    <span>🌀 Kuller Tezligi (Fan RPM):</span>
+                                    <span class="slider-val" id="sliderFanVal">1200 RPM</span>
+                                </div>
+                                <input type="range" id="sliderFan" min="800" max="5000" step="100" value="1200" class="custom-slider">
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-head">
+                                    <span>📦 Faol Jarayonlar Soni:</span>
+                                    <span class="slider-val" id="sliderProcVal">120 ta</span>
+                                </div>
+                                <input type="range" id="sliderProc" min="20" max="500" value="120" class="custom-slider">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jonli Ta'sir va Darslik Izohi -->
+                    <div class="sim-box result-box" id="simResultBox">
+                        <div class="result-header">
+                            <span class="result-status-dot status-green" id="simStatusDot"></span>
+                            <h4 id="simStatusTitle">Tizim Barqaror (Optimal Holat)</h4>
+                        </div>
+                        <div class="result-content" id="simExplanationText">
+                            Kompyuter resurslaridan me'yorida foydalanilmoqda. CPU va RAM optimal diapazonda. Kullerlar shovqinsiz aylanmoqda. Harorat xavfsiz darajada.
+                        </div>
+
+                        <!-- Texnik Tafsilotlar Kartasi -->
+                        <div class="tech-impact-grid">
+                            <div class="impact-card">
+                                <span class="im-title">Kuller & Akustika:</span>
+                                <span class="im-val" id="simFanDesc">1200 RPM (Ovoz deyarli eshitilmaydi)</span>
+                            </div>
+                            <div class="impact-card">
+                                <span class="im-title">Termal Holat:</span>
+                                <span class="im-val" id="simThermalDesc">45°C - Sovuq (Trottling yo'q)</span>
+                            </div>
+                            <div class="impact-card">
+                                <span class="im-title">Tizim Xavfi:</span>
+                                <span class="im-val" id="simRiskDesc">0% - Xavf yo'q</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: OS FARQLARI (WINDOWS VS LINUX)      -->
+        <!-- ========================================== -->
+        <main id="tab-os-diff" class="tab-content">
+            <div class="os-guide-container">
+                
+                <div class="os-intro-card">
+                    <h2>🔍 Nima Uchun Monitoring Ko'rsatkichlari Operatsion Tizimga Bog'liq?</h2>
+                    <p>Dars davomida o'quvchilarga tushuntirilishi kerak bo'lgan eng muhim arxitekturaviy farqlar:</p>
+                </div>
+
+                <div class="os-comparison-grid">
+                    
+                    <!-- 1. CPU LOAD AVERAGE -->
+                    <div class="os-card">
+                        <div class="os-card-header">
+                            <span class="badge-feature">CPU Monitoring</span>
+                            <h3>Load Average vs CPU %</h3>
+                        </div>
+                        <div class="os-card-body">
+                            <div class="os-side linux-side">
+                                <strong>🐧 Linux / Unix:</strong>
+                                <p><code>Load Average (1, 5, 15 daqiqa)</code> ko'rsatkichini ishlatadi. Bu protsessor bajarishini kutayotgan yoki disk kutayotgan jarayonlar navbati uzunligidir. 4 yadroli kompyuterda Load Average = 4.0 bo'lsa, tizim 100% to'la!</p>
+                            </div>
+                            <div class="os-side windows-side">
+                                <strong>🪟 Windows:</strong>
+                                <p>Load Average tushunchasi mavjud emas. Windows faqat <code>% Processor Time</code> (har bir yadro foizi) va kamdan-kam <code>Processor Queue Length</code> orqali o'lchaydi.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. RAM VA KESH -->
+                    <div class="os-card">
+                        <div class="os-card-header">
+                            <span class="badge-feature">Xotira Boshqaruvi</span>
+                            <h3>"Free RAM" vs "Cached RAM"</h3>
+                        </div>
+                        <div class="os-card-body">
+                            <div class="os-side linux-side">
+                                <strong>🐧 Linux falsafasi:</strong>
+                                <p><em>"Bo'sh turgan RAM - isrof qilingan RAMdir!"</em> Linux bo'sh xotirani avtomatik ravishda disk keshiga (Page Cache / Buffers) aylantiradi. Dasturga xotira kerak bo'lsa, kesh bir zumda bo'shatiladi.</p>
+                            </div>
+                            <div class="os-side windows-side">
+                                <strong>🪟 Windows yondashuvi:</strong>
+                                <p>Windows xotirani <em>In Use</em>, <em>Modified</em>, <em>Standby</em> (kesh) va <em>Free</em> ro'yxatlariga bo'ladi. Task Manager foydalanuvchiga faqat amaliy ishlatilayotgan xotira foizini ko'rsatadi.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. VIRTUAL XOTIRA (SWAP) -->
+                    <div class="os-card">
+                        <div class="os-card-header">
+                            <span class="badge-feature">Virtual Xotira</span>
+                            <h3>Swap Partition vs Pagefile.sys</h3>
+                        </div>
+                        <div class="os-card-body">
+                            <div class="os-side linux-side">
+                                <strong>🐧 Linux:</strong>
+                                <p>Odatda alohida <strong>Swap bo'limi (Partition)</strong> yoki <code>/swapfile</code> ishlatiladi. Xotira to'liq to'lganda mashhur <strong>OOM Killer (Out Of Memory Killer)</strong> algoritmi ishga tushib, eng katta jarayonni majburiy to'xtatadi.</p>
+                            </div>
+                            <div class="os-side windows-side">
+                                <strong>🪟 Windows:</strong>
+                                <p>Diskda yashirin <code>pagefile.sys</code> fayli shaklida bo'ladi. Xotira tugasa, Windows ogohlantirish chiqaradi va dasturlar sekinlashib "Not Responding" holatiga tushadi.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. FAYL TIZIMI VA DISKLAR -->
+                    <div class="os-card">
+                        <div class="os-card-header">
+                            <span class="badge-feature">Disk Tizimi</span>
+                            <h3>Disk Harflari (C:, D:) vs VFS Ierarxiyasi (/)</h3>
+                        </div>
+                        <div class="os-card-body">
+                            <div class="os-side linux-side">
+                                <strong>🐧 Linux VFS:</strong>
+                                <p>Harflar umuman yo'q. Hamma narsa yagona ildiz <code>/</code> (root) katalogiga ulangan. Har bir disk yoki fleshka <code>/mnt</code> yoki <code>/media</code> ichiga ulanadi (mount qilinadi).</p>
+                            </div>
+                            <div class="os-side windows-side">
+                                <strong>🪟 Windows Drive Letters:</strong>
+                                <p>Har bir disk bo'limi alohida harf bilan belgilanadi: <code>C:\</code> (tizim), <code>D:\</code> (ma'lumotlar), <code>E:\</code> (fleshka). Fayl yo'llari teskari slesh (<code>\</code>) bilan yoziladi.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: VIKTORINA (DARSLIK TESTI)           -->
+        <!-- ========================================== -->
+        <main id="tab-quiz" class="tab-content">
+            <div class="quiz-container">
+                <div class="quiz-header-card">
+                    <h2>🎓 Bilimlarni Sinash: Monitoring va Tizim Ko'rsatkichlari</h2>
+                    <p>O'quvchilar mavzuni qay darajada o'zlashtirganini 6 ta interaktiv savol orqali tekshiring:</p>
+                    <div class="quiz-score-badge" id="quizScoreBadge">Ball: 0 / 6</div>
+                </div>
+
+                <div class="quiz-questions-list" id="quizQuestionsContainer">
+                    <!-- JS orqali to'ldiriladi -->
+                </div>
+
+                <div class="quiz-footer">
+                    <button id="btnRestartQuiz" class="btn-primary">🔄 Testni qaytadan boshlash</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: O'QITUVCHI KONSPEKTI VA QO'LLANMA   -->
+        <!-- ========================================== -->
+        <main id="tab-theory" class="tab-content">
+            <div class="theory-container">
+                <div class="theory-article">
+                    <h2>📖 Dars Konspekti: Kompyuter Holatini Monitoring Qilish</h2>
+                    
+                    <section class="th-sec">
+                        <h3>1. Monitoring nima va nega u zarur?</h3>
+                        <p>Monitoring — bu operatsion tizim va apparat resurslarining (CPU, RAM, Disk, Tarmoq) joriy parametrlarini uzluksiz kuzatish, qayd etish va tahlil qilish jarayonidir. Monitoring orqali:</p>
+                        <ul>
+                            <li>Dasturlar muzlab qolishi (hang) sabablari aniqlanadi.</li>
+                            <li>Tizim qizib ketishi (termal trottling) oldi olinadi.</li>
+                            <li>Kiberhujumlar (DDoS, viruslar, mining dasturlari) o'z vaqtida fosh qilinadi.</li>
+                            <li>Server va bulutli tizimlarning uzluksiz ishlashi (99.9% uptime) ta'minlanadi.</li>
+                        </ul>
+                    </section>
+
+                    <section class="th-sec">
+                        <h3>2. Python tilida monitoring qanday amalga oshiriladi?</h3>
+                        <p>Python tilida tizim ko'rsatkichlarini olish uchun eng ommabop va kuchli kutubxona — <code>psutil</code> (process and system utilities) hisoblanadi:</p>
+                        <pre><code>import psutil
+
+# 1. CPU foizi
+cpu = psutil.cpu_percent(interval=1)
+
+# 2. Xotira (RAM)
+ram = psutil.virtual_memory()
+print(f"Ishlatilayotgan RAM: {ram.percent}%")
+
+# 3. Disk bandligi
+disk = psutil.disk_usage('/')
+print(f"Bo'sh joy: {disk.free / (1024**3):.1f} GB")</code></pre>
+                    </section>
+
+                    <section class="th-sec">
+                        <h3>3. Darsda o'quvchilarga beriladigan amaliy topshiriqlar</h3>
+                        <ol>
+                            <li><strong>1-topshiriq:</strong> Simulyator panelida "CPU 100% Stress" ssenariysini yoqing va uning haroratga ta'sirini kuzating. Trottling nima ekanligini tushuntiring.</li>
+                            <li><strong>2-topshiriq:</strong> "Bir Yadro vs Ko'p Yadro" rejimini yoqib, nega bitta yadroli dasturlash zamonaviy 8 yadroli protsessor quvvatini to'liq ishlata olmasligini tahlil qiling.</li>
+                            <li><strong>3-topshiriq:</strong> Linux va Windows tizimlarida xotira boshqaruvi (Swap vs Pagefile) farqini jadval orqali daftarga qayd eting.</li>
+                        </ol>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <!-- Pastki Holat Qatori (Footer) -->
+        <footer class="bottom-bar">
+            <div class="footer-left">
+                <span class="status-indicator-dot online"></span>
+                <span id="footerStatusText">Backend faol | Ma'lumot yangilanishi: 1s</span>
+            </div>
+            <div class="footer-right">
+                <span>Informatika va Axborot Texnologiyalari Ta'limi Uchun Maxsus Ishlab Chiqilgan</span>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Ovoz effektlari uchun Web Audio API -->
+    <script src="app.js"></script>
+</body>
+</html>
